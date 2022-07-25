@@ -30,9 +30,29 @@ type ApplicationClientProtocolServiceClient struct {
 	*ipc.Client
 }
 
+func (c *ApplicationClientProtocolServiceClient) GetApplications(ctx context.Context,
+	req *api.GetApplicationsRequestProto) (*api.GetApplicationsResponseProto, error) {
+	resp := &api.GetApplicationsResponseProto{}
+	err := c.Call(ctx, defined.GetCalleeRPCRequestHeaderProto(&ApplicationClientProtocol), req, resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
 func (c *ApplicationClientProtocolServiceClient) SignalToContainer(ctx context.Context,
 	req *api.SignalContainerRequestProto) (*api.SignalContainerResponseProto, error) {
 	resp := &api.SignalContainerResponseProto{}
+	err := c.Call(ctx, defined.GetCalleeRPCRequestHeaderProto(&ApplicationClientProtocol), req, resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+func (c *ApplicationClientProtocolServiceClient) GetContainers(ctx context.Context,
+	req *api.GetContainersRequestProto) (*api.GetContainersResponseProto, error) {
+	resp := &api.GetContainersResponseProto{}
 	err := c.Call(ctx, defined.GetCalleeRPCRequestHeaderProto(&ApplicationClientProtocol), req, resp)
 	if err != nil {
 		return nil, err
