@@ -30,6 +30,16 @@ type ApplicationClientProtocolServiceClient struct {
 	*ipc.Client
 }
 
+func (c *ApplicationClientProtocolServiceClient) GetNewApplication(ctx context.Context,
+	req *api.GetNewApplicationRequestProto) (*api.GetNewApplicationResponseProto, error) {
+	resp := &api.GetNewApplicationResponseProto{}
+	err := c.Call(ctx, defined.GetCalleeRPCRequestHeaderProto(&ApplicationClientProtocol), req, resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
 func (c *ApplicationClientProtocolServiceClient) GetApplications(ctx context.Context,
 	req *api.GetApplicationsRequestProto) (*api.GetApplicationsResponseProto, error) {
 	resp := &api.GetApplicationsResponseProto{}

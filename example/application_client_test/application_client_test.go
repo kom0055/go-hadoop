@@ -1,8 +1,10 @@
-package client
+package application_client_test_test
 
 import (
 	"context"
+	"github.com/kom0055/go-hadoop/client"
 	"github.com/kom0055/go-hadoop/proto/yarn/api"
+	"log"
 	"testing"
 )
 
@@ -10,12 +12,29 @@ const (
 	ContainerIdBitmask = 0xffffffffff
 )
 
-func TestSignalToContainer(t *testing.T) {
-	ctx := context.Background()
-	appClient, err := DialApplicationClientProtocolService(ctx, "192.168.1.136:8050")
+var (
+	ctx       = context.Background()
+	appClient *client.ApplicationClientProtocolServiceClient
+)
+
+func TestMain(m *testing.M) {
+	var err error
+	appClient, err = client.DialApplicationClientProtocolService(ctx, "192.168.1.136:8050")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	m.Run()
+}
+
+func TestGetNewApplication(t *testing.T) {
+	resp, err := appClient.GetNewApplication(ctx, &api.GetNewApplicationRequestProto{})
 	if err != nil {
 		t.Fatal(err)
 	}
+	t.Log(resp)
+}
+
+func TestSignalToContainer(t *testing.T) {
 	appId := int32(1431)
 	attemptId := int32(000001)
 	clusterTs := int64(1658419814772)
@@ -45,11 +64,7 @@ func TestSignalToContainer(t *testing.T) {
 }
 
 func TestGetContainers(t *testing.T) {
-	ctx := context.Background()
-	appClient, err := DialApplicationClientProtocolService(ctx, "192.168.1.136:8050")
-	if err != nil {
-		t.Fatal(err)
-	}
+
 	appId := int32(1431)
 	attemptId := int32(000001)
 	clusterTs := int64(1658419814772)
@@ -72,24 +87,10 @@ func TestGetContainers(t *testing.T) {
 }
 
 func TestGetApplications(t *testing.T) {
-	ctx := context.Background()
-	appClient, err := DialApplicationClientProtocolService(ctx, "192.168.1.136:8050")
-	if err != nil {
-		t.Fatal(err)
-	}
+
 	limit := int64(5)
 	resp, err := appClient.GetApplications(ctx, &api.GetApplicationsRequestProto{
-		ApplicationTypes:  nil,
-		ApplicationStates: nil,
-		Users:             nil,
-		Queues:            nil,
-		Limit:             &limit,
-		StartBegin:        nil,
-		StartEnd:          nil,
-		FinishBegin:       nil,
-		FinishEnd:         nil,
-		ApplicationTags:   nil,
-		Scope:             nil,
+		Limit: &limit,
 	})
 	if err != nil {
 		t.Fatal(err)
