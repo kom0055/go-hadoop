@@ -88,7 +88,7 @@ func CreateSimpleUGIProto() (*common.UserInformationProto, error) {
 	// Figure the current user-name
 	var username string
 	if currentUser, err := user.Current(); err != nil {
-		log.Fatal("user.Current", err)
+		log.Println("user.Current", err)
 		return nil, err
 	} else {
 		username = currentUser.Username

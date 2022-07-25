@@ -72,7 +72,7 @@ func (c *Client) Call(ctx context.Context, rpc *common.RequestHeaderProto, rpcRe
 	rpcCall := call{callId: 0, procedure: rpc, request: rpcRequest, response: rpcResponse}
 	err = sendRequest(c, conn, &rpcCall)
 	if err != nil {
-		log.Fatal("sendRequest", err)
+		log.Println("sendRequest", err)
 		return err
 	}
 
@@ -115,7 +115,7 @@ func getConnection(c *Client, connectionId *connIdentity) (*connection, error) {
 	if con == nil {
 		con, err = setupConnection(c)
 		if err != nil {
-			log.Fatal("Couldn't setup connection: ", err)
+			log.Println("Couldn't setup connection: ", err)
 			return nil, err
 		}
 
@@ -136,7 +136,7 @@ func getConnection(c *Client, connectionId *connIdentity) (*connection, error) {
 			log.Println("attempting SASL negotiation.")
 
 			if err = negotiateSimpleTokenAuth(c, con); err != nil {
-				log.Fatal("failed to complete SASL negotiation!")
+				log.Println("failed to complete SASL negotiation!")
 				return nil, err
 			}
 
@@ -171,31 +171,31 @@ func setupConnection(c *Client) (*connection, error) {
 func writeConnectionHeader(conn *connection, authProtocol defined.AuthProtocol) error {
 	// RPC_HEADER
 	if _, err := conn.con.Write(defined.RpcHeader); err != nil {
-		log.Fatal("conn.Write gohadoop.RPC_HEADER", err)
+		log.Println("conn.Write gohadoop.RPC_HEADER", err)
 		return err
 	}
 
 	// RPC_VERSION
 	if _, err := conn.con.Write(defined.Version); err != nil {
-		log.Fatal("conn.Write gohadoop.VERSION", err)
+		log.Println("conn.Write gohadoop.VERSION", err)
 		return err
 	}
 
 	// RPC_SERVICE_CLASS
 	if serviceClass, err := defined.ConvertFixedToBytes(defined.RpcServiceClass); err != nil {
-		log.Fatal("binary.Write", err)
+		log.Println("binary.Write", err)
 		return err
 	} else if _, err := conn.con.Write(serviceClass); err != nil {
-		log.Fatal("conn.Write RPC_SERVICE_CLASS", err)
+		log.Println("conn.Write RPC_SERVICE_CLASS", err)
 		return err
 	}
 
 	// AuthProtocol
 	if authProtocolBytes, err := defined.ConvertFixedToBytes(authProtocol); err != nil {
-		log.Fatal("WTF AUTH_PROTOCOL", err)
+		log.Println("WTF AUTH_PROTOCOL", err)
 		return err
 	} else if _, err := conn.con.Write(authProtocolBytes); err != nil {
-		log.Fatal("conn.Write gohadoop.AUTH_PROTOCOL", err)
+		log.Println("conn.Write gohadoop.AUTH_PROTOCOL", err)
 		return err
 	}
 
@@ -219,13 +219,13 @@ func writeConnectionContext(c *Client, conn *connection, connectionId *connIdent
 
 	rpcReqHeaderProtoBytes, err := proto.Marshal(&rpcReqHeaderProto)
 	if err != nil {
-		log.Fatal("proto.Marshal(&rpcReqHeaderProto)", err)
+		log.Println("proto.Marshal(&rpcReqHeaderProto)", err)
 		return err
 	}
 
 	ipcCtxProtoBytes, _ := proto.Marshal(&ipcCtxProto)
 	if err != nil {
-		log.Fatal("proto.Marshal(&ipcCtxProto)", err)
+		log.Println("proto.Marshal(&ipcCtxProto)", err)
 		return err
 	}
 
@@ -234,19 +234,19 @@ func writeConnectionContext(c *Client, conn *connection, connectionId *connIdent
 	totalLengthBytes, err := defined.ConvertFixedToBytes(tLen)
 
 	if err != nil {
-		log.Fatal("ConvertFixedToBytes(totalLength)", err)
+		log.Println("ConvertFixedToBytes(totalLength)", err)
 		return err
 	} else if _, err := conn.con.Write(totalLengthBytes); err != nil {
-		log.Fatal("conn.con.Write(totalLengthBytes)", err)
+		log.Println("conn.con.Write(totalLengthBytes)", err)
 		return err
 	}
 
 	if err := writeDelimitedBytes(conn, rpcReqHeaderProtoBytes); err != nil {
-		log.Fatal("writeDelimitedBytes(conn, rpcReqHeaderProtoBytes)", err)
+		log.Println("writeDelimitedBytes(conn, rpcReqHeaderProtoBytes)", err)
 		return err
 	}
 	if err := writeDelimitedBytes(conn, ipcCtxProtoBytes); err != nil {
-		log.Fatal("writeDelimitedBytes(conn, ipcCtxProtoBytes)", err)
+		log.Println("writeDelimitedBytes(conn, ipcCtxProtoBytes)", err)
 		return err
 	}
 
@@ -272,7 +272,7 @@ func sendRequest(c *Client, conn *connection, rpcCall *call) error {
 	rpcReqHeaderProto := common.RpcRequestHeaderProto{RpcKind: &defined.RpcProtocolBufffer, RpcOp: &defined.RpcFinalPacket, CallId: &rpcCall.callId, ClientId: clientId[0:16], RetryCount: &rpcCall.retryCount}
 	rpcReqHeaderProtoBytes, err := proto.Marshal(&rpcReqHeaderProto)
 	if err != nil {
-		log.Fatal("proto.Marshal(&rpcReqHeaderProto)", err)
+		log.Println("proto.Marshal(&rpcReqHeaderProto)", err)
 		return err
 	}
 
@@ -280,7 +280,7 @@ func sendRequest(c *Client, conn *connection, rpcCall *call) error {
 	requestHeaderProto := rpcCall.procedure
 	requestHeaderProtoBytes, err := proto.Marshal(requestHeaderProto)
 	if err != nil {
-		log.Fatal("proto.Marshal(&requestHeaderProto)", err)
+		log.Println("proto.Marshal(&requestHeaderProto)", err)
 		return err
 	}
 
@@ -288,32 +288,32 @@ func sendRequest(c *Client, conn *connection, rpcCall *call) error {
 	paramProto := rpcCall.request
 	paramProtoBytes, err := proto.Marshal(paramProto)
 	if err != nil {
-		log.Fatal("proto.Marshal(&paramProto)", err)
+		log.Println("proto.Marshal(&paramProto)", err)
 		return err
 	}
 
 	totalLength := len(rpcReqHeaderProtoBytes) + sizeVarint(len(rpcReqHeaderProtoBytes)) + len(requestHeaderProtoBytes) + sizeVarint(len(requestHeaderProtoBytes)) + len(paramProtoBytes) + sizeVarint(len(paramProtoBytes))
 	tLen := int32(totalLength)
 	if totalLengthBytes, err := defined.ConvertFixedToBytes(tLen); err != nil {
-		log.Fatal("ConvertFixedToBytes(totalLength)", err)
+		log.Println("ConvertFixedToBytes(totalLength)", err)
 		return err
 	} else {
 		if _, err := conn.con.Write(totalLengthBytes); err != nil {
-			log.Fatal("conn.con.Write(totalLengthBytes)", err)
+			log.Println("conn.con.Write(totalLengthBytes)", err)
 			return err
 		}
 	}
 
 	if err := writeDelimitedBytes(conn, rpcReqHeaderProtoBytes); err != nil {
-		log.Fatal("writeDelimitedBytes(conn, rpcReqHeaderProtoBytes)", err)
+		log.Println("writeDelimitedBytes(conn, rpcReqHeaderProtoBytes)", err)
 		return err
 	}
 	if err := writeDelimitedBytes(conn, requestHeaderProtoBytes); err != nil {
-		log.Fatal("writeDelimitedBytes(conn, requestHeaderProtoBytes)", err)
+		log.Println("writeDelimitedBytes(conn, requestHeaderProtoBytes)", err)
 		return err
 	}
 	if err := writeDelimitedBytes(conn, paramProtoBytes); err != nil {
-		log.Fatal("writeDelimitedBytes(conn, paramProtoBytes)", err)
+		log.Println("writeDelimitedBytes(conn, paramProtoBytes)", err)
 		return err
 	}
 
@@ -325,7 +325,7 @@ func sendRequest(c *Client, conn *connection, rpcCall *call) error {
 func writeDelimitedTo(conn *connection, msg proto.Message) error {
 	msgBytes, err := proto.Marshal(msg)
 	if err != nil {
-		log.Fatal("proto.Marshal(msg)", err)
+		log.Println("proto.Marshal(msg)", err)
 		return err
 	}
 	return writeDelimitedBytes(conn, msgBytes)
@@ -333,7 +333,7 @@ func writeDelimitedTo(conn *connection, msg proto.Message) error {
 
 func writeDelimitedBytes(conn *connection, data []byte) error {
 	if _, err := conn.con.Write(protowire.AppendVarint([]byte{}, uint64(len(data)))); err != nil {
-		log.Fatal("conn.con.Write(protowire.AppendVarint(uint64(len(data))))", err)
+		log.Println("conn.con.Write(protowire.AppendVarint(uint64(len(data))))", err)
 		return err
 	}
 
@@ -342,7 +342,7 @@ func writeDelimitedBytes(conn *connection, data []byte) error {
 	//	return err
 	//}
 	if _, err := conn.con.Write(data); err != nil {
-		log.Fatal("conn.con.Write(data)", err)
+		log.Println("conn.con.Write(data)", err)
 		return err
 	}
 
@@ -354,18 +354,18 @@ func (c *Client) readResponse(conn *connection, rpcCall *call) error {
 	var totalLength int32 = -1
 	var totalLengthBytes [4]byte
 	if _, err := conn.con.Read(totalLengthBytes[0:4]); err != nil {
-		log.Fatal("conn.con.Read(totalLengthBytes)", err)
+		log.Println("conn.con.Read(totalLengthBytes)", err)
 		return err
 	}
 
 	if err := defined.ConvertBytesToFixed(totalLengthBytes[0:4], &totalLength); err != nil {
-		log.Fatal("gohadoop.ConvertBytesToFixed(totalLengthBytes, &totalLength)", err)
+		log.Println("gohadoop.ConvertBytesToFixed(totalLengthBytes, &totalLength)", err)
 		return err
 	}
 
 	responseBytes := make([]byte, totalLength)
 	if _, err := conn.con.Read(responseBytes); err != nil {
-		log.Fatal("conn.con.Read(totalLengthBytes)", err)
+		log.Println("conn.con.Read(totalLengthBytes)", err)
 		return err
 	}
 
@@ -373,14 +373,14 @@ func (c *Client) readResponse(conn *connection, rpcCall *call) error {
 	rpcResponseHeaderProto := common.RpcResponseHeaderProto{}
 	off, err := readDelimited(responseBytes[0:totalLength], &rpcResponseHeaderProto)
 	if err != nil {
-		log.Fatal("readDelimited(responseBytes, rpcResponseHeaderProto)", err)
+		log.Println("readDelimited(responseBytes, rpcResponseHeaderProto)", err)
 		return err
 	}
 	//log.Println("Received rpcResponseHeaderProto = ", rpcResponseHeaderProto)
 
 	err = c.checkRpcHeader(&rpcResponseHeaderProto)
 	if err != nil {
-		log.Fatal("c.checkRpcHeader failed", err)
+		log.Println("c.checkRpcHeader failed", err)
 		return err
 	}
 
@@ -407,7 +407,7 @@ func (c *Client) readResponse(conn *connection, rpcCall *call) error {
 func readDelimited(rawData []byte, msg proto.Message) (int, error) {
 	headerLength, off := protowire.ConsumeVarint(rawData)
 	if off == 0 {
-		log.Fatal("protowire.ConsumeVarint(rawData) returned zero")
+		log.Println("protowire.ConsumeVarint(rawData) returned zero")
 		return -1, nil
 	}
 
@@ -419,7 +419,7 @@ func readDelimited(rawData []byte, msg proto.Message) (int, error) {
 
 	err := proto.Unmarshal(rawData[off:off+int(headerLength)], msg)
 	if err != nil {
-		log.Fatal("proto.Unmarshal(rawData[off:off+headerLength]) ", err)
+		log.Println("proto.Unmarshal(rawData[off:off+headerLength]) ", err)
 		return -1, err
 	}
 
@@ -431,7 +431,7 @@ func (c *Client) checkRpcHeader(rpcResponseHeaderProto *common.RpcResponseHeader
 	headerClientId := rpcResponseHeaderProto.ClientId
 	if len(rpcResponseHeaderProto.ClientId) > 0 {
 		if !bytes.Equal(callClientId[0:16], headerClientId[0:16]) {
-			log.Fatal("Incorrect clientId: ", headerClientId)
+			log.Println("Incorrect clientId: ", headerClientId)
 			return errors.New("incorrect clientId")
 		}
 	}
@@ -448,14 +448,14 @@ func sendSaslMessage(c *Client, conn *connection, message *common.RpcSaslProto) 
 	saslRpcHeaderProtoBytes, err := proto.Marshal(&saslRpcHeaderProto)
 
 	if err != nil {
-		log.Fatal("proto.Marshal(&saslRpcHeaderProto)", err)
+		log.Println("proto.Marshal(&saslRpcHeaderProto)", err)
 		return err
 	}
 
 	saslRpcMessageProtoBytes, err := proto.Marshal(message)
 
 	if err != nil {
-		log.Fatal("proto.Marshal(saslMessage)", err)
+		log.Println("proto.Marshal(saslMessage)", err)
 		return err
 	}
 
@@ -463,20 +463,20 @@ func sendSaslMessage(c *Client, conn *connection, message *common.RpcSaslProto) 
 	tLen := int32(totalLength)
 
 	if totalLengthBytes, err := defined.ConvertFixedToBytes(tLen); err != nil {
-		log.Fatal("ConvertFixedToBytes(totalLength)", err)
+		log.Println("ConvertFixedToBytes(totalLength)", err)
 		return err
 	} else {
 		if _, err := conn.con.Write(totalLengthBytes); err != nil {
-			log.Fatal("conn.con.Write(totalLengthBytes)", err)
+			log.Println("conn.con.Write(totalLengthBytes)", err)
 			return err
 		}
 	}
 	if err := writeDelimitedBytes(conn, saslRpcHeaderProtoBytes); err != nil {
-		log.Fatal("writeDelimitedBytes(conn, saslRpcHeaderProtoBytes)", err)
+		log.Println("writeDelimitedBytes(conn, saslRpcHeaderProtoBytes)", err)
 		return err
 	}
 	if err := writeDelimitedBytes(conn, saslRpcMessageProtoBytes); err != nil {
-		log.Fatal("writeDelimitedBytes(conn, saslRpcMessageProtoBytes)", err)
+		log.Println("writeDelimitedBytes(conn, saslRpcMessageProtoBytes)", err)
 		return err
 	}
 
@@ -489,18 +489,18 @@ func receiveSaslMessage(_ *Client, conn *connection) (*common.RpcSaslProto, erro
 	var totalLengthBytes [4]byte
 
 	if _, err := conn.con.Read(totalLengthBytes[0:4]); err != nil {
-		log.Fatal("conn.con.Read(totalLengthBytes)", err)
+		log.Println("conn.con.Read(totalLengthBytes)", err)
 		return nil, err
 	}
 	if err := defined.ConvertBytesToFixed(totalLengthBytes[0:4], &totalLength); err != nil {
-		log.Fatal("gohadoop.ConvertBytesToFixed(totalLengthBytes, &totalLength)", err)
+		log.Println("gohadoop.ConvertBytesToFixed(totalLengthBytes, &totalLength)", err)
 		return nil, err
 	}
 
 	responseBytes := make([]byte, totalLength)
 
 	if _, err := conn.con.Read(responseBytes); err != nil {
-		log.Fatal("conn.con.Read(totalLengthBytes)", err)
+		log.Println("conn.con.Read(totalLengthBytes)", err)
 		return nil, err
 	}
 
@@ -508,13 +508,13 @@ func receiveSaslMessage(_ *Client, conn *connection) (*common.RpcSaslProto, erro
 	rpcResponseHeaderProto := common.RpcResponseHeaderProto{}
 	off, err := readDelimited(responseBytes[0:totalLength], &rpcResponseHeaderProto)
 	if err != nil {
-		log.Fatal("readDelimited(responseBytes, rpcResponseHeaderProto)", err)
+		log.Println("readDelimited(responseBytes, rpcResponseHeaderProto)", err)
 		return nil, err
 	}
 
 	err = checkSaslRpcHeader(&rpcResponseHeaderProto)
 	if err != nil {
-		log.Fatal("checkSaslRpcHeader failed", err)
+		log.Println("checkSaslRpcHeader failed", err)
 		return nil, err
 	}
 
@@ -523,7 +523,7 @@ func receiveSaslMessage(_ *Client, conn *connection) (*common.RpcSaslProto, erro
 	if *rpcResponseHeaderProto.Status == common.RpcResponseHeaderProto_SUCCESS {
 		// Parse RpcResponseWrapper
 		if _, err = readDelimited(responseBytes[off:], &saslRpcMessage); err != nil {
-			log.Fatal("failed to read sasl response!")
+			log.Println("failed to read sasl response!")
 			return nil, err
 		} else {
 			return &saslRpcMessage, nil
@@ -549,7 +549,7 @@ func checkSaslRpcHeader(rpcResponseHeaderProto *common.RpcResponseHeaderProto) e
 	headerClientId := rpcResponseHeaderProto.ClientId
 	if rpcResponseHeaderProto.ClientId != nil {
 		if !bytes.Equal(SaslRpcDummyClientId, headerClientId) {
-			log.Fatal("Incorrect clientId: ", headerClientId)
+			log.Println("Incorrect clientId: ", headerClientId)
 			return errors.New("incorrect clientId")
 		}
 	}
@@ -564,20 +564,20 @@ func negotiateSimpleTokenAuth(client *Client, con *connection) error {
 
 	//send a SASL negotiation request
 	if err = sendSaslMessage(client, con, &saslNegotiateMessage); err != nil {
-		log.Fatal("failed to send SASL NEGOTIATE message!")
+		log.Println("failed to send SASL NEGOTIATE message!")
 		return err
 	}
 
 	//get a response with supported mehcanisms/challenge
 	if saslResponseMessage, err = receiveSaslMessage(client, con); err != nil {
-		log.Fatal("failed to receive SASL NEGOTIATE response!")
+		log.Println("failed to receive SASL NEGOTIATE response!")
 		return err
 	}
 
 	auths := saslResponseMessage.GetAuths()
 
 	if numAuths := len(auths); numAuths <= 0 {
-		log.Fatal("No supported auth mechanisms!")
+		log.Println("No supported auth mechanisms!")
 		return errors.New("no supported auth mechanisms")
 	}
 
@@ -586,7 +586,7 @@ func negotiateSimpleTokenAuth(client *Client, con *connection) error {
 	auth := auths[0]
 
 	if !(auth.GetMethod() == "TOKEN" && auth.GetMechanism() == "DIGEST-MD5") {
-		log.Fatal("gohadoop only supports TOKEN/DIGEST-MD5 auth!")
+		log.Println("gohadoop only supports TOKEN/DIGEST-MD5 auth!")
 		return errors.New("gohadoop only supports TOKEN/DIGEST-MD5 auth")
 	}
 
@@ -602,7 +602,7 @@ func negotiateSimpleTokenAuth(client *Client, con *connection) error {
 	response, err := security.GetDigestMD5ChallengeResponse(protocol, serverId, challenge, userToken)
 
 	if err != nil {
-		log.Fatal("failed to get challenge response! ", err)
+		log.Println("failed to get challenge response! ", err)
 		return err
 	}
 
@@ -615,18 +615,18 @@ func negotiateSimpleTokenAuth(client *Client, con *connection) error {
 
 	//send a SASL inititate request
 	if err = sendSaslMessage(client, con, &saslInitiateMessage); err != nil {
-		log.Fatal("failed to send SASL INITIATE message!")
+		log.Println("failed to send SASL INITIATE message!")
 		return err
 	}
 
 	//get a response with supported mehcanisms/challenge
 	if saslResponseMessage, err = receiveSaslMessage(client, con); err != nil {
-		log.Fatal("failed to read response to SASL INITIATE response!")
+		log.Println("failed to read response to SASL INITIATE response!")
 		return err
 	}
 
 	if saslResponseMessage.GetState() != common.RpcSaslProto_SUCCESS {
-		log.Fatal("expected SASL SUCCESS response!")
+		log.Println("expected SASL SUCCESS response!")
 		return errors.New("expected SASL SUCCESS response")
 	}
 

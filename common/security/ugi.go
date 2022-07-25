@@ -25,7 +25,7 @@ func CreateCurrentUserInfoProto() (*common.UserInformationProto, error) {
 	// Figure the current user-name
 	var username string
 	if currentUser, err := user.Current(); err != nil {
-		log.Fatal("user.Current", err)
+		log.Println("user.Current", err)
 		return nil, err
 	} else {
 		username = currentUser.Username
@@ -69,20 +69,20 @@ func (ugi *UserGroupInformation) GetUserTokens() map[string]*common.TokenProto {
 
 func (ugi *UserGroupInformation) AddUserTokenWithAlias(alias string, token *common.TokenProto) {
 	if token == nil {
-		log.Fatal("supplied token is nil!")
+		log.Println("supplied token is nil!")
 		return
 	}
 
 	if length := len(ugi.userTokens); length < maxTokens {
 		ugi.userTokens[alias] = token
 	} else {
-		log.Fatal("user already has maxTokens:", maxTokens)
+		log.Println("user already has maxTokens:", maxTokens)
 	}
 }
 
 func (ugi *UserGroupInformation) AddUserToken(token *common.TokenProto) {
 	if token == nil {
-		log.Fatal("supplied token is nil!")
+		log.Println("supplied token is nil!")
 		return
 	}
 
