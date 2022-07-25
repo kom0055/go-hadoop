@@ -2,6 +2,7 @@ package ipc
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"github.com/kom0055/go-hadoop/common/defined"
@@ -56,7 +57,7 @@ var (
 	SaslRpcInvalidRetryCount int32 = -1
 )
 
-func (c *Client) Call(rpc *common.RequestHeaderProto, rpcRequest proto.Message, rpcResponse proto.Message) error {
+func (c *Client) Call(ctx context.Context, rpc *common.RequestHeaderProto, rpcRequest proto.Message, rpcResponse proto.Message) error {
 	// Create connIdentity
 	connectionId := connIdentity{user: *c.Ugi.RealUser, protocol: *rpc.DeclaringClassProtocolName, address: c.ServerAddress}
 
