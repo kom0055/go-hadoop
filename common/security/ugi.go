@@ -1,8 +1,8 @@
 package security
 
 import (
+	"github.com/kom0055/go-hadoop/common/log"
 	"github.com/kom0055/go-hadoop/proto/common"
-	"log"
 	"os/user"
 	"sync"
 )
@@ -25,7 +25,7 @@ func CreateCurrentUserInfoProto() (*common.UserInformationProto, error) {
 	// Figure the current user-name
 	var username string
 	if currentUser, err := user.Current(); err != nil {
-		log.Println("user.Current", err)
+		log.Warnf("user.Current: %+V", err)
 		return nil, err
 	} else {
 		username = currentUser.Username
@@ -69,20 +69,20 @@ func (ugi *UserGroupInformation) GetUserTokens() map[string]*common.TokenProto {
 
 func (ugi *UserGroupInformation) AddUserTokenWithAlias(alias string, token *common.TokenProto) {
 	if token == nil {
-		log.Println("supplied token is nil!")
+		log.Infof("supplied token is nil!")
 		return
 	}
 
 	if length := len(ugi.userTokens); length < maxTokens {
 		ugi.userTokens[alias] = token
 	} else {
-		log.Println("user already has maxTokens:", maxTokens)
+		log.Infof("user already has maxTokens: %+v", maxTokens)
 	}
 }
 
 func (ugi *UserGroupInformation) AddUserToken(token *common.TokenProto) {
 	if token == nil {
-		log.Println("supplied token is nil!")
+		log.Infof("supplied token is nil!")
 		return
 	}
 

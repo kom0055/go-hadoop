@@ -6,8 +6,8 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"errors"
+	"github.com/kom0055/go-hadoop/common/log"
 	"github.com/kom0055/go-hadoop/proto/common"
-	"log"
 	"strings"
 )
 
@@ -20,7 +20,7 @@ func getChallengeParams(challenge string) (map[string]string, error) {
 		keyVal := strings.SplitN(split, "=", 2)
 
 		if len(keyVal) != 2 {
-			log.Println("found invalid param: ", split)
+			log.Warnf("found invalid param: %+V", split)
 			return nil, errors.New("found invalid param: " + split)
 		}
 
@@ -136,14 +136,14 @@ func generateChallengeReponse(username string, password string, protocol string,
 	buffer = append(buffer, "qop=", qop)
 	response := strings.Join(buffer, "")
 
-	log.Printf("generated challenge response: %s", response)
+	log.Warnf("generated challenge response: %s", response)
 
 	return response, nil
 }
 
 func GetDigestMD5ChallengeResponse(protocol string, serverId string, challenge []byte, userToken *common.TokenProto) (string, error) {
 	if len(challenge) <= 0 {
-		log.Println("challenge cannot be empty!")
+		log.Warnf("challenge cannot be empty!")
 
 		return "", errors.New("challenge cannot be empty")
 	}
@@ -152,13 +152,13 @@ func GetDigestMD5ChallengeResponse(protocol string, serverId string, challenge [
 
 	challengeParams, err := getChallengeParams(string(challenge))
 	if err != nil {
-		log.Println("challenge params extraction failure! ", err)
+		log.Warnf("challenge params extraction failure: %+V", err)
 		return "", err
 	}
 
 	err = validateChallengeParameters(challengeParams)
 	if err != nil {
-		log.Println("challenge params validation failure! ", err)
+		log.Warnf("challenge params validation failure: %+V ", err)
 		return "", err
 	}
 
@@ -167,7 +167,7 @@ func GetDigestMD5ChallengeResponse(protocol string, serverId string, challenge [
 	response, err := generateChallengeReponse(username, password, protocol, serverId, challengeParams)
 
 	if err != nil {
-		log.Println("Failed to generate challenge response! ", err)
+		log.Warnf("Failed to generate challenge response: %+V ", err)
 		return "", err
 	}
 
