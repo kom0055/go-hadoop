@@ -14,7 +14,6 @@ import (
 	"log"
 	"net"
 	"strings"
-	"sync"
 )
 
 type Client struct {
@@ -25,7 +24,7 @@ type Client struct {
 }
 
 type connection struct {
-	con *net.TCPConn
+	con net.Conn
 }
 
 type connIdentity struct {
@@ -82,11 +81,6 @@ func (c *Client) Call(ctx context.Context, rpc *common.RequestHeaderProto, rpcRe
 	return err
 }
 
-var connectionPool = struct {
-	sync.RWMutex
-	connections map[connIdentity]*connection
-}{connections: make(map[connIdentity]*connection)}
-
 func findUsableTokenForService(service string) (*common.TokenProto, bool) {
 	userTokens := security.GetCurrentUser().GetUserTokens()
 
@@ -106,53 +100,53 @@ func findUsableTokenForService(service string) (*common.TokenProto, bool) {
 
 func getConnection(c *Client, connectionId *connIdentity) (*connection, error) {
 	// Try to re-use an existing connection
-	connectionPool.RLock()
-	con := connectionPool.connections[*connectionId]
-	connectionPool.RUnlock()
+
+	con, exist := connectionPoolWrapper.GetConnection(connectionId)
 
 	// If necessary, create a new connection and save it in the connection-pool
 	var err error
-	if con == nil {
-		con, err = setupConnection(c)
-		if err != nil {
-			log.Println("Couldn't setup connection: ", err)
+	if exist && con != nil {
+		return con, nil
+	}
+
+	con, err = setupConnection(c)
+	if err != nil {
+		log.Println("Couldn't setup connection: ", err)
+		return nil, err
+	}
+
+	connectionPoolWrapper.SetConnection(connectionId, con)
+
+	authProtocol := defined.AUTH_PROTOCOL_NONE
+
+	if _, found := findUsableTokenForService(c.ServerAddress); found {
+		log.Printf("found token for service: %s", c.ServerAddress)
+		authProtocol = defined.AUTH_PROTOCOL_SASL
+	}
+
+	_ = writeConnectionHeader(con, authProtocol)
+
+	if authProtocol == defined.AUTH_PROTOCOL_SASL {
+		log.Println("attempting SASL negotiation.")
+
+		if err = negotiateSimpleTokenAuth(c, con); err != nil {
+			log.Println("failed to complete SASL negotiation!")
 			return nil, err
 		}
 
-		connectionPool.Lock()
-		connectionPool.connections[*connectionId] = con
-		connectionPool.Unlock()
-
-		authProtocol := defined.AUTH_PROTOCOL_NONE
-
-		if _, found := findUsableTokenForService(c.ServerAddress); found {
-			log.Printf("found token for service: %s", c.ServerAddress)
-			authProtocol = defined.AUTH_PROTOCOL_SASL
-		}
-
-		_ = writeConnectionHeader(con, authProtocol)
-
-		if authProtocol == defined.AUTH_PROTOCOL_SASL {
-			log.Println("attempting SASL negotiation.")
-
-			if err = negotiateSimpleTokenAuth(c, con); err != nil {
-				log.Println("failed to complete SASL negotiation!")
-				return nil, err
-			}
-
-		} else {
-			log.Println("no usable tokens. proceeding without auth.")
-		}
-
-		_ = writeConnectionContext(c, con, connectionId, authProtocol)
+	} else {
+		log.Println("no usable tokens. proceeding without auth.")
 	}
+
+	_ = writeConnectionContext(c, con, connectionId, authProtocol)
 
 	return con, nil
 }
 
 func setupConnection(c *Client) (*connection, error) {
-	addr, _ := net.ResolveTCPAddr("tcp", c.ServerAddress)
-	tcpConn, err := net.DialTCP("tcp", nil, addr)
+	//addr, _ := net.ResolveTCPAddr("tcp", c.ServerAddress)
+	//tcpConn, err := net.DialTCP("tcp", nil, addr)
+	tcpConn, err := (&net.Dialer{}).DialContext(context.Background(), "tcp", c.ServerAddress)
 	if err != nil {
 		log.Println("error: ", err)
 		return nil, err
@@ -163,7 +157,9 @@ func setupConnection(c *Client) (*connection, error) {
 	// TODO: Ping thread
 
 	// Set tcp no-delay
-	_ = tcpConn.SetNoDelay(c.TCPNoDelay)
+	if tc, ok := tcpConn.(*net.TCPConn); ok {
+		_ = tc.SetNoDelay(c.TCPNoDelay)
+	}
 
 	return &connection{tcpConn}, nil
 }
