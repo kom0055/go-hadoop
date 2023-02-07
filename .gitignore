@@ -9,7 +9,6 @@ bin
 _output/
 testbin/*
 
-LCC_VERSION_FILE
 
 # Test binary, build with `go test -c`
 *.test

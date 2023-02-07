@@ -9,6 +9,5 @@ type call struct {
 	procedure  proto.Message
 	request    proto.Message
 	response   proto.Message
-	err        *error
 	retryCount int32
 }

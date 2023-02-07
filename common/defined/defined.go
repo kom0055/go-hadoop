@@ -3,12 +3,13 @@ package defined
 import (
 	"bytes"
 	"encoding/binary"
-	"github.com/kom0055/go-hadoop/common/log"
-	"github.com/kom0055/go-hadoop/proto/common"
 	"os/user"
 	"runtime"
 	"strings"
 	"unicode"
+
+	"github.com/kom0055/go-hadoop/common/log"
+	"github.com/kom0055/go-hadoop/proto/v1alpha1/common"
 )
 
 var (
@@ -88,7 +89,7 @@ func CreateSimpleUGIProto() (*common.UserInformationProto, error) {
 	// Figure the current user-name
 	var username string
 	if currentUser, err := user.Current(); err != nil {
-		log.Infof("user.Current: %+v", err)
+		log.Infof("user.Current: %v", err)
 		return nil, err
 	} else {
 		username = currentUser.Username

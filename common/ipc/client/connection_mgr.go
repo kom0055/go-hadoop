@@ -2,11 +2,12 @@ package ipc
 
 import (
 	"context"
+	"net"
+	"sync"
+
 	"github.com/kom0055/go-hadoop/common/defined"
 	"github.com/kom0055/go-hadoop/common/log"
 	uuid "github.com/nu7hatch/gouuid"
-	"net"
-	"sync"
 )
 
 var (
@@ -32,10 +33,10 @@ func (p *connectionManager) GetConnection(ctx context.Context, clientId *uuid.UU
 	//tcpConn, err := net.DialTCP("tcp", nil, addr)
 	tcpConn, err := (&net.Dialer{}).DialContext(ctx, "tcp", connectionId.address)
 	if err != nil {
-		log.Warnf("error: %+v", err)
+		log.Warnf("error: %v", err)
 		return nil, err
 	}
-	log.Infof("Successfully connected: %+v ", connectionId)
+	log.Infof("Successfully connected: %v ", connectionId)
 
 	// TODO: Ping thread
 
@@ -65,7 +66,7 @@ func (p *connectionManager) GetConnection(ctx context.Context, clientId *uuid.UU
 		log.Infof("attempting SASL negotiation.")
 
 		if err = conn.negotiateSimpleTokenAuth(connectionId.address); err != nil {
-			log.Warnf("failed to complete SASL negotiation!: %+v", err)
+			log.Warnf("failed to complete SASL negotiation!: %v", err)
 			return nil, err
 		}
 

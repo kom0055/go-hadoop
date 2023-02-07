@@ -3,9 +3,10 @@ package ipc
 import (
 	"bytes"
 	"errors"
+
 	"github.com/kom0055/go-hadoop/common/log"
 	"github.com/kom0055/go-hadoop/common/security"
-	"github.com/kom0055/go-hadoop/proto/common"
+	"github.com/kom0055/go-hadoop/proto/v1alpha1/common"
 	"google.golang.org/protobuf/encoding/protowire"
 	"google.golang.org/protobuf/proto"
 )
@@ -59,7 +60,7 @@ func readDelimited(rawData []byte, msg proto.Message) (int, error) {
 
 	err := proto.Unmarshal(rawData[off:off+int(headerLength)], msg)
 	if err != nil {
-		log.Warnf("proto.Unmarshal(rawData[off:off+headerLength]): %+v ", err)
+		log.Warnf("proto.Unmarshal(rawData[off:off+headerLength]): %v ", err)
 		return -1, err
 	}
 
@@ -70,7 +71,7 @@ func checkSaslRpcHeader(rpcResponseHeaderProto *common.RpcResponseHeaderProto) e
 	headerClientId := rpcResponseHeaderProto.ClientId
 	if rpcResponseHeaderProto.ClientId != nil {
 		if !bytes.Equal(SaslRpcDummyClientId, headerClientId) {
-			log.Warnf("Incorrect clientId: %+v", headerClientId)
+			log.Warnf("Incorrect clientId: %v", headerClientId)
 			return errors.New("incorrect clientId")
 		}
 	}

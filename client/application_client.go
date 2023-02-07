@@ -3,12 +3,13 @@ package client
 import (
 	"context"
 	"encoding/json"
+	"math"
+
 	"github.com/kom0055/go-hadoop/common/defined"
 	ipc "github.com/kom0055/go-hadoop/common/ipc/client"
-	"github.com/kom0055/go-hadoop/proto/yarn/api"
+	"github.com/kom0055/go-hadoop/proto/v1alpha1/yarn/api"
 	uuid "github.com/nu7hatch/gouuid"
 	"google.golang.org/protobuf/proto"
-	"math"
 )
 
 var (

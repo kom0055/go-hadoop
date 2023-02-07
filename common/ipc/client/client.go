@@ -5,12 +5,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
+
 	"github.com/kom0055/go-hadoop/common/defined"
 	"github.com/kom0055/go-hadoop/common/log"
-	"github.com/kom0055/go-hadoop/proto/common"
-	"github.com/nu7hatch/gouuid"
+	"github.com/kom0055/go-hadoop/proto/v1alpha1/common"
+	uuid "github.com/nu7hatch/gouuid"
 	"google.golang.org/protobuf/proto"
-	"strings"
 )
 
 type Client struct {
@@ -43,7 +44,7 @@ func (c *Client) Call(ctx context.Context, rpc *common.RequestHeaderProto, rpcRe
 	rpcCall := call{callId: 0, procedure: rpc, request: rpcRequest, response: rpcResponse}
 	err = conn.sendRequest(c.ClientId, &rpcCall)
 	if err != nil {
-		log.Warnf("sendRequest: %+v", err)
+		log.Warnf("sendRequest: %v", err)
 		connectionMgr.RmvConnection(connectionId)
 		return err
 	}
@@ -51,7 +52,7 @@ func (c *Client) Call(ctx context.Context, rpc *common.RequestHeaderProto, rpcRe
 	// Read & return response
 	err = c.readResponse(ctx, conn, &rpcCall)
 	if err != nil {
-		log.Warnf("readResponse: %+v", err)
+		log.Warnf("readResponse: %v", err)
 		connectionMgr.RmvConnection(connectionId)
 		return err
 	}
@@ -63,18 +64,18 @@ func (c *Client) readResponse(ctx context.Context, conn *connection, rpcCall *ca
 	var totalLength int32 = -1
 	var totalLengthBytes [4]byte
 	if _, err := conn.Read(totalLengthBytes[0:4]); err != nil {
-		log.Warnf("readResponse#conn.con.Read(totalLengthBytes): %+v", err)
+		log.Warnf("readResponse#conn.con.Read(totalLengthBytes): %v", err)
 		return err
 	}
 
 	if err := defined.ConvertBytesToFixed(totalLengthBytes[0:4], &totalLength); err != nil {
-		log.Warnf("readResponse#gohadoop.ConvertBytesToFixed(totalLengthBytes, &totalLength): %+v", err)
+		log.Warnf("readResponse#gohadoop.ConvertBytesToFixed(totalLengthBytes, &totalLength): %v", err)
 		return err
 	}
 
 	responseBytes := make([]byte, totalLength)
 	if _, err := conn.Read(responseBytes); err != nil {
-		log.Warnf("conn.con.Read(responseBytes): %+v", err)
+		log.Warnf("conn.con.Read(responseBytes): %v", err)
 		return err
 	}
 
@@ -82,14 +83,14 @@ func (c *Client) readResponse(ctx context.Context, conn *connection, rpcCall *ca
 	rpcResponseHeaderProto := common.RpcResponseHeaderProto{}
 	off, err := readDelimited(responseBytes[0:totalLength], &rpcResponseHeaderProto)
 	if err != nil {
-		log.Warnf("readDelimited(responseBytes, rpcResponseHeaderProto): %+v", err)
+		log.Warnf("readDelimited(responseBytes, rpcResponseHeaderProto): %v", err)
 		return err
 	}
 	//log.Println("Received rpcResponseHeaderProto = ", rpcResponseHeaderProto)
 
 	err = c.checkRpcHeader(ctx, &rpcResponseHeaderProto)
 	if err != nil {
-		log.Warnf("c.checkRpcHeader failed: %+v", err)
+		log.Warnf("c.checkRpcHeader failed: %v", err)
 		return err
 	}
 
@@ -118,7 +119,7 @@ func (c *Client) checkRpcHeader(ctx context.Context, rpcResponseHeaderProto *com
 	headerClientId := rpcResponseHeaderProto.ClientId
 	if len(rpcResponseHeaderProto.ClientId) > 0 {
 		if !bytes.Equal(callClientId[0:16], headerClientId[0:16]) {
-			log.Infof("Incorrect clientId: %+v", headerClientId)
+			log.Infof("Incorrect clientId: %v", headerClientId)
 			return errors.New("incorrect clientId")
 		}
 	}
@@ -132,7 +133,7 @@ func (c *Client) getConnection(ctx context.Context, connectionId connIdentity) (
 
 	// If necessary, create a new connection and save it in the connection-pool
 	if err != nil {
-		log.Warnf("Couldn't setup connection: %+v", err)
+		log.Warnf("Couldn't setup connection: %v", err)
 		return nil, err
 	}
 

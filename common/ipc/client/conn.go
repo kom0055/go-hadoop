@@ -2,16 +2,17 @@ package ipc
 
 import (
 	"errors"
-	"github.com/kom0055/go-hadoop/common/defined"
-	"github.com/kom0055/go-hadoop/common/log"
-	"github.com/kom0055/go-hadoop/common/security"
-	"github.com/kom0055/go-hadoop/proto/common"
-	uuid "github.com/nu7hatch/gouuid"
-	"google.golang.org/protobuf/encoding/protowire"
-	"google.golang.org/protobuf/proto"
 	"net"
 	"strings"
 	"time"
+
+	"github.com/kom0055/go-hadoop/common/defined"
+	"github.com/kom0055/go-hadoop/common/log"
+	"github.com/kom0055/go-hadoop/common/security"
+	"github.com/kom0055/go-hadoop/proto/v1alpha1/common"
+	uuid "github.com/nu7hatch/gouuid"
+	"google.golang.org/protobuf/encoding/protowire"
+	"google.golang.org/protobuf/proto"
 )
 
 type connection struct {
@@ -53,31 +54,31 @@ func (conn *connection) SetWriteDeadline(t time.Time) error {
 func (conn *connection) writeConnectionHeader(authProtocol defined.AuthProtocol) error {
 	// RPC_HEADER
 	if _, err := conn.Write(defined.RpcHeader); err != nil {
-		log.Warnf("conn.Write gohadoop.RPC_HEADER: %+v", err)
+		log.Warnf("conn.Write gohadoop.RPC_HEADER: %v", err)
 		return err
 	}
 
 	// RPC_VERSION
 	if _, err := conn.Write(defined.Version); err != nil {
-		log.Warnf("conn.Write gohadoop.VERSION: %+v", err)
+		log.Warnf("conn.Write gohadoop.VERSION: %v", err)
 		return err
 	}
 
 	// RPC_SERVICE_CLASS
 	if serviceClass, err := defined.ConvertFixedToBytes(defined.RpcServiceClass); err != nil {
-		log.Warnf("binary.Write: %+v", err)
+		log.Warnf("binary.Write: %v", err)
 		return err
 	} else if _, err := conn.Write(serviceClass); err != nil {
-		log.Warnf("conn.Write RPC_SERVICE_CLASS: %+v", err)
+		log.Warnf("conn.Write RPC_SERVICE_CLASS: %v", err)
 		return err
 	}
 
 	// AuthProtocol
 	if authProtocolBytes, err := defined.ConvertFixedToBytes(authProtocol); err != nil {
-		log.Warnf("WTF AUTH_PROTOCOL: %+v", err)
+		log.Warnf("WTF AUTH_PROTOCOL: %v", err)
 		return err
 	} else if _, err := conn.Write(authProtocolBytes); err != nil {
-		log.Warnf("conn.Write gohadoop.AUTH_PROTOCOL: %+v", err)
+		log.Warnf("conn.Write gohadoop.AUTH_PROTOCOL: %v", err)
 		return err
 	}
 
@@ -101,13 +102,13 @@ func (conn *connection) writeConnectionContext(clientUUId *uuid.UUID, connection
 
 	rpcReqHeaderProtoBytes, err := proto.Marshal(&rpcReqHeaderProto)
 	if err != nil {
-		log.Warnf("proto.Marshal(&rpcReqHeaderProto): %+v", err)
+		log.Warnf("proto.Marshal(&rpcReqHeaderProto): %v", err)
 		return err
 	}
 
 	ipcCtxProtoBytes, _ := proto.Marshal(&ipcCtxProto)
 	if err != nil {
-		log.Warnf("proto.Marshal(&ipcCtxProto): %+v", err)
+		log.Warnf("proto.Marshal(&ipcCtxProto): %v", err)
 		return err
 	}
 
@@ -116,19 +117,19 @@ func (conn *connection) writeConnectionContext(clientUUId *uuid.UUID, connection
 	totalLengthBytes, err := defined.ConvertFixedToBytes(tLen)
 
 	if err != nil {
-		log.Warnf("ConvertFixedToBytes(totalLength): %+v", err)
+		log.Warnf("ConvertFixedToBytes(totalLength): %v", err)
 		return err
 	} else if _, err := conn.Write(totalLengthBytes); err != nil {
-		log.Warnf("conn.con.Write(totalLengthBytes): %+v", err)
+		log.Warnf("conn.con.Write(totalLengthBytes): %v", err)
 		return err
 	}
 
 	if err := conn.writeDelimitedBytes(rpcReqHeaderProtoBytes); err != nil {
-		log.Warnf("writeDelimitedBytes(conn, rpcReqHeaderProtoBytes): %+v", err)
+		log.Warnf("writeDelimitedBytes(conn, rpcReqHeaderProtoBytes): %v", err)
 		return err
 	}
 	if err := conn.writeDelimitedBytes(ipcCtxProtoBytes); err != nil {
-		log.Warnf("writeDelimitedBytes(conn, ipcCtxProtoBytes): %+v", err)
+		log.Warnf("writeDelimitedBytes(conn, ipcCtxProtoBytes): %v", err)
 		return err
 	}
 
@@ -137,7 +138,7 @@ func (conn *connection) writeConnectionContext(clientUUId *uuid.UUID, connection
 
 func (conn *connection) writeDelimitedBytes(data []byte) error {
 	if _, err := conn.Write(protowire.AppendVarint([]byte{}, uint64(len(data)))); err != nil {
-		log.Warnf("conn.con.Write(protowire.AppendVarint(uint64(len(data)))): %+v", err)
+		log.Warnf("conn.con.Write(protowire.AppendVarint(uint64(len(data)))): %v", err)
 		return err
 	}
 
@@ -146,17 +147,18 @@ func (conn *connection) writeDelimitedBytes(data []byte) error {
 	//	return err
 	//}
 	if _, err := conn.Write(data); err != nil {
-		log.Warnf("conn.con.Write(data): %+v", err)
+		log.Warnf("conn.con.Write(data): %v", err)
 		return err
 	}
 
 	return nil
 }
 
+//nolint:golint,unused
 func (conn *connection) writeDelimitedTo(msg proto.Message) error {
 	msgBytes, err := proto.Marshal(msg)
 	if err != nil {
-		log.Warnf("proto.Marshal(msg): %+v", err)
+		log.Warnf("proto.Marshal(msg): %v", err)
 		return err
 	}
 	return conn.writeDelimitedBytes(msgBytes)
@@ -172,14 +174,14 @@ func (conn *connection) sendSaslMessage(message *common.RpcSaslProto) error {
 	saslRpcHeaderProtoBytes, err := proto.Marshal(&saslRpcHeaderProto)
 
 	if err != nil {
-		log.Warnf("proto.Marshal(&saslRpcHeaderProto): %+v", err)
+		log.Warnf("proto.Marshal(&saslRpcHeaderProto): %v", err)
 		return err
 	}
 
 	saslRpcMessageProtoBytes, err := proto.Marshal(message)
 
 	if err != nil {
-		log.Warnf("proto.Marshal(saslMessage): %+v", err)
+		log.Warnf("proto.Marshal(saslMessage): %v", err)
 		return err
 	}
 
@@ -187,20 +189,20 @@ func (conn *connection) sendSaslMessage(message *common.RpcSaslProto) error {
 	tLen := int32(totalLength)
 
 	if totalLengthBytes, err := defined.ConvertFixedToBytes(tLen); err != nil {
-		log.Warnf("ConvertFixedToBytes(totalLength): %+v", err)
+		log.Warnf("ConvertFixedToBytes(totalLength): %v", err)
 		return err
 	} else {
 		if _, err := conn.Write(totalLengthBytes); err != nil {
-			log.Warnf("conn.con.Write(totalLengthBytes): %+v", err)
+			log.Warnf("conn.con.Write(totalLengthBytes): %v", err)
 			return err
 		}
 	}
 	if err := conn.writeDelimitedBytes(saslRpcHeaderProtoBytes); err != nil {
-		log.Warnf("writeDelimitedBytes(conn, saslRpcHeaderProtoBytes) :%+v", err)
+		log.Warnf("writeDelimitedBytes(conn, saslRpcHeaderProtoBytes) :%v", err)
 		return err
 	}
 	if err := conn.writeDelimitedBytes(saslRpcMessageProtoBytes); err != nil {
-		log.Warnf("writeDelimitedBytes(conn, saslRpcMessageProtoBytes): %+v", err)
+		log.Warnf("writeDelimitedBytes(conn, saslRpcMessageProtoBytes): %v", err)
 		return err
 	}
 
@@ -213,7 +215,7 @@ func (conn *connection) receiveSaslMessage() (*common.RpcSaslProto, error) {
 	var totalLengthBytes [4]byte
 
 	if _, err := conn.Read(totalLengthBytes[0:4]); err != nil {
-		log.Warnf("receiveSaslMessage#conn.con.Read(totalLengthBytes): %+v", err)
+		log.Warnf("receiveSaslMessage#conn.con.Read(totalLengthBytes): %v", err)
 		return nil, err
 	}
 	if err := defined.ConvertBytesToFixed(totalLengthBytes[0:4], &totalLength); err != nil {
@@ -224,7 +226,7 @@ func (conn *connection) receiveSaslMessage() (*common.RpcSaslProto, error) {
 	responseBytes := make([]byte, totalLength)
 
 	if _, err := conn.Read(responseBytes); err != nil {
-		log.Warnf("receiveSaslMessage#conn.con.Read(responseBytes): %+v", err)
+		log.Warnf("receiveSaslMessage#conn.con.Read(responseBytes): %v", err)
 		return nil, err
 	}
 
@@ -232,13 +234,13 @@ func (conn *connection) receiveSaslMessage() (*common.RpcSaslProto, error) {
 	rpcResponseHeaderProto := common.RpcResponseHeaderProto{}
 	off, err := readDelimited(responseBytes[0:totalLength], &rpcResponseHeaderProto)
 	if err != nil {
-		log.Warnf("readDelimited(responseBytes, rpcResponseHeaderProto): %+v", err)
+		log.Warnf("readDelimited(responseBytes, rpcResponseHeaderProto): %v", err)
 		return nil, err
 	}
 
 	err = checkSaslRpcHeader(&rpcResponseHeaderProto)
 	if err != nil {
-		log.Warnf("checkSaslRpcHeader failed: %+v", err)
+		log.Warnf("checkSaslRpcHeader failed: %v", err)
 		return nil, err
 	}
 
@@ -355,7 +357,7 @@ func (conn *connection) sendRequest(clientId *uuid.UUID, rpcCall *call) error {
 	rpcReqHeaderProto := common.RpcRequestHeaderProto{RpcKind: &defined.RpcProtocolBufffer, RpcOp: &defined.RpcFinalPacket, CallId: &rpcCall.callId, ClientId: clientId[0:16], RetryCount: &rpcCall.retryCount}
 	rpcReqHeaderProtoBytes, err := proto.Marshal(&rpcReqHeaderProto)
 	if err != nil {
-		log.Warnf("proto.Marshal(&rpcReqHeaderProto): %+v", err)
+		log.Warnf("proto.Marshal(&rpcReqHeaderProto): %v", err)
 		return err
 	}
 
@@ -363,7 +365,7 @@ func (conn *connection) sendRequest(clientId *uuid.UUID, rpcCall *call) error {
 	requestHeaderProto := rpcCall.procedure
 	requestHeaderProtoBytes, err := proto.Marshal(requestHeaderProto)
 	if err != nil {
-		log.Warnf("proto.Marshal(&requestHeaderProto): %+v", err)
+		log.Warnf("proto.Marshal(&requestHeaderProto): %v", err)
 		return err
 	}
 
@@ -371,32 +373,32 @@ func (conn *connection) sendRequest(clientId *uuid.UUID, rpcCall *call) error {
 	paramProto := rpcCall.request
 	paramProtoBytes, err := proto.Marshal(paramProto)
 	if err != nil {
-		log.Warnf("proto.Marshal(&paramProto): %+v", err)
+		log.Warnf("proto.Marshal(&paramProto): %v", err)
 		return err
 	}
 
 	totalLength := len(rpcReqHeaderProtoBytes) + sizeVarint(len(rpcReqHeaderProtoBytes)) + len(requestHeaderProtoBytes) + sizeVarint(len(requestHeaderProtoBytes)) + len(paramProtoBytes) + sizeVarint(len(paramProtoBytes))
 	tLen := int32(totalLength)
 	if totalLengthBytes, err := defined.ConvertFixedToBytes(tLen); err != nil {
-		log.Warnf("ConvertFixedToBytes(totalLength): %+v", err)
+		log.Warnf("ConvertFixedToBytes(totalLength): %v", err)
 		return err
 	} else {
 		if _, err := conn.Write(totalLengthBytes); err != nil {
-			log.Warnf("conn.con.Write(totalLengthBytes): %+v", err)
+			log.Warnf("conn.con.Write(totalLengthBytes): %v", err)
 			return err
 		}
 	}
 
 	if err := conn.writeDelimitedBytes(rpcReqHeaderProtoBytes); err != nil {
-		log.Warnf("writeDelimitedBytes(conn, rpcReqHeaderProtoBytes): %+v", err)
+		log.Warnf("writeDelimitedBytes(conn, rpcReqHeaderProtoBytes): %v", err)
 		return err
 	}
 	if err := conn.writeDelimitedBytes(requestHeaderProtoBytes); err != nil {
-		log.Warnf("writeDelimitedBytes(conn, requestHeaderProtoBytes): %+v", err)
+		log.Warnf("writeDelimitedBytes(conn, requestHeaderProtoBytes): %v", err)
 		return err
 	}
 	if err := conn.writeDelimitedBytes(paramProtoBytes); err != nil {
-		log.Warnf("writeDelimitedBytes(conn, paramProtoBytes): %+v", err)
+		log.Warnf("writeDelimitedBytes(conn, paramProtoBytes): %v", err)
 		return err
 	}
 

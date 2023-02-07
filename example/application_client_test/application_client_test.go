@@ -2,10 +2,11 @@ package application_client_test_test
 
 import (
 	"context"
-	"github.com/kom0055/go-hadoop/client"
-	"github.com/kom0055/go-hadoop/common/log"
-	"github.com/kom0055/go-hadoop/proto/yarn/api"
+	"log"
 	"testing"
+
+	"github.com/kom0055/go-hadoop/client"
+	"github.com/kom0055/go-hadoop/proto/v1alpha1/yarn/api"
 )
 
 const (
@@ -21,7 +22,7 @@ func TestMain(m *testing.M) {
 	var err error
 	appClient, err = client.DialApplicationClientProtocolService(ctx, "192.168.1.136:8050")
 	if err != nil {
-		log.Fatalf("DialApplicationClientProtocolService FAILED: %+V", err)
+		log.Fatalf("DialApplicationClientProtocolService FAILED: %v", err)
 	}
 	m.Run()
 }

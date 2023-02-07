@@ -6,9 +6,11 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"errors"
-	"github.com/kom0055/go-hadoop/common/log"
-	"github.com/kom0055/go-hadoop/proto/common"
+
 	"strings"
+
+	"github.com/kom0055/go-hadoop/common/log"
+	"github.com/kom0055/go-hadoop/proto/v1alpha1/common"
 )
 
 func getChallengeParams(challenge string) (map[string]string, error) {
@@ -20,7 +22,7 @@ func getChallengeParams(challenge string) (map[string]string, error) {
 		keyVal := strings.SplitN(split, "=", 2)
 
 		if len(keyVal) != 2 {
-			log.Warnf("found invalid param: %+V", split)
+			log.Warnf("found invalid param: %v", split)
 			return nil, errors.New("found invalid param: " + split)
 		}
 
@@ -41,8 +43,8 @@ func getChallengeParams(challenge string) (map[string]string, error) {
 	return challengeParams, nil
 }
 
-//we only support a very specific digest-md5 mechanism for the moment
-//multiple realm, qop not supported
+// we only support a very specific digest-md5 mechanism for the moment
+// multiple realm, qop not supported
 func validateChallengeParameters(challengeParams map[string]string) error {
 	var errString string
 
@@ -152,13 +154,13 @@ func GetDigestMD5ChallengeResponse(protocol string, serverId string, challenge [
 
 	challengeParams, err := getChallengeParams(string(challenge))
 	if err != nil {
-		log.Warnf("challenge params extraction failure: %+V", err)
+		log.Warnf("challenge params extraction failure: %v", err)
 		return "", err
 	}
 
 	err = validateChallengeParameters(challengeParams)
 	if err != nil {
-		log.Warnf("challenge params validation failure: %+V ", err)
+		log.Warnf("challenge params validation failure: %v ", err)
 		return "", err
 	}
 
@@ -167,7 +169,7 @@ func GetDigestMD5ChallengeResponse(protocol string, serverId string, challenge [
 	response, err := generateChallengeReponse(username, password, protocol, serverId, challengeParams)
 
 	if err != nil {
-		log.Warnf("Failed to generate challenge response: %+V ", err)
+		log.Warnf("Failed to generate challenge response: %v ", err)
 		return "", err
 	}
 

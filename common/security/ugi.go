@@ -1,10 +1,11 @@
 package security
 
 import (
-	"github.com/kom0055/go-hadoop/common/log"
-	"github.com/kom0055/go-hadoop/proto/common"
 	"os/user"
 	"sync"
+
+	"github.com/kom0055/go-hadoop/common/log"
+	"github.com/kom0055/go-hadoop/proto/v1alpha1/common"
 )
 
 /** a (very) basic UserGroupInformation implementation for storing user data/tokens,
@@ -12,20 +13,24 @@ import (
 */
 
 type UserGroupInformation struct {
-	rwMutex    sync.RWMutex
 	userInfo   *common.UserInformationProto
 	userTokens map[string]*common.TokenProto
 }
 
-var once sync.Once
-var currentUserGroupInformation *UserGroupInformation
-var maxTokens = 16
+var (
+	once                        sync.Once
+	currentUserGroupInformation *UserGroupInformation
+)
+
+const (
+	maxTokens = 16
+)
 
 func CreateCurrentUserInfoProto() (*common.UserInformationProto, error) {
 	// Figure the current user-name
 	var username string
 	if currentUser, err := user.Current(); err != nil {
-		log.Warnf("user.Current: %+V", err)
+		log.Warnf("user.Current: %v", err)
 		return nil, err
 	} else {
 		username = currentUser.Username
@@ -76,7 +81,7 @@ func (ugi *UserGroupInformation) AddUserTokenWithAlias(alias string, token *comm
 	if length := len(ugi.userTokens); length < maxTokens {
 		ugi.userTokens[alias] = token
 	} else {
-		log.Infof("user already has maxTokens: %+v", maxTokens)
+		log.Infof("user already has maxTokens: %v", maxTokens)
 	}
 }
 

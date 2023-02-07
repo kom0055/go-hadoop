@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/kom0055/go-hadoop/common/log"
-	"github.com/kom0055/go-hadoop/proto/yarn/api"
+	"github.com/kom0055/go-hadoop/proto/v1alpha1/yarn/api"
 )
 
 const (
@@ -19,7 +19,7 @@ func GetContainerIdProto(containerId string) (*api.ContainerIdProto, error) {
 		return nil, err
 	}
 	id := epoch<<offset + cId
-	log.Infof("KillContainer# containerId: %+v, clusterTs: %+v, appId: %+v, attemptId: %+v, epoch: %+v, cId: %+v, id: %+v",
+	log.Infof("KillContainer# containerId: %v, clusterTs: %v, appId: %v, attemptId: %v, epoch: %v, cId: %v, id: %v",
 		containerId, clusterTs, appId, attemptId, epoch, cId, id)
 
 	applicationId := &api.ApplicationIdProto{
